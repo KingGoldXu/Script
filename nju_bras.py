@@ -2,8 +2,8 @@ from urllib import request,parse
 
 print('Login to p.nju.edu.cn...')
 login_data=parse.urlencode([
-    ('password', 'xsb857442867'),
-    ('username', '131220144')
+    ('password', 'your_password'),
+    ('username', 'your_id')
 ])
 
 req = request.Request('http://p.nju.edu.cn/portal_io/login')
