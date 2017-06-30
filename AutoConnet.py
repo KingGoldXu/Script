@@ -2,6 +2,7 @@ from urllib import request,parse
 from urllib.error import *
 import http.cookiejar
 import time
+import threading
 
 login_data=parse.urlencode([
     ('password', '******'),
@@ -56,8 +57,25 @@ def onlineDeviceNum(msg):
         return None
     else:
         return dic['total']
-	
-def main():
+        
+def inputLoop():
+    print('Manual login thread start!')
+    while True:
+        print('Login anyway? input "Y"!')
+        lab=input()
+        if lab=='Y' or lab=='y':
+            try:
+                msg=login(login_data)
+                if isLoginSuccess(msg):
+                    print('Login success!!!')
+                    printUserInfo(msg)
+                else:
+                    print('Login failed!!!')
+            except URLError:
+                print('URLError')
+                
+def autoLoop():
+    print('Auto login thread start!')
     while True:
         try:
             if not isOnline(getCurrentUserInfo()):
@@ -77,6 +95,13 @@ def main():
         except URLError:
             print('URLError')
         time.sleep(20)
+	
+def main():
+    ml = threading.Thread(target=inputLoop)
+    al = threading.Thread(target=autoLoop)
+    ml.start()
+    al.start()
     
 if __name__ == "__main__":
     main()
+
