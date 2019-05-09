@@ -1,6 +1,9 @@
-# nju_bras
-十行python模拟南大p.nju.edu.cn登陆
+# Script
+## use script make life better
 
-update:2017/3/27
-
-今天心情不错,写了一个检测校园网是否在线并自动登陆的小工具（只有在无设备在线才登陆）
+* nju_bras.py 
+  * login p.nju, replace id and pw with your own id and pw, run python nju_bras.py.
+* AutoConnet.py
+  * login p.nju, replace id and pw with your own id and pw, reconnect when you logout, support mul-device, input 'y' to manual login.
+* cslabcms.py
+  * replace url with the page url that contain students homework, replace cookies with yours to fack log status, run python cslabcms.py, files saved in current path.
