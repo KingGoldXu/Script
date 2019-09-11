@@ -134,14 +134,14 @@ def write_files_in_directory(commits, base_path):
     json_file = os.path.join(base_path, 'commits1.json')
     with open(json_file, 'w') as f:
         json.dump(commits, f)
-q
+
 
 def is_message_contain_code(commit):
     """ 给定一个commit,判断commit message中是否包括了代码片段的commit.
         代码片段包括class name,method name,variable name等.
         准备采用get_file_contents_by_hash提取变动的java文件的内容,
         使用pygments从java文件中获取name.
-    
+
     Arguments:
         commit {dict} -- commits中的元素
 
@@ -153,21 +153,21 @@ def is_message_contain_code(commit):
     for file_pair in commit['files']:
         file1, file2 = file_pair['file1'], file_pair['file2']
         l1, l2 = file1.split('\t'), file2.split('\t')
-            if len(l1) == 2 and len(l2) == 2:
-                f1_content = get_file_contents_by_hash(l1[1])
-                f2_content = get_file_contents_by_hash(l2[1])
-                x = highlight(f1_content, JavaLaxer(), RawTokenFormatter())
-                for y in str(x, encoding='utf-8').splitlines():
-                    ys = y.split('\t'):
-                    if ys[0].startswith('Token.Name') and \
+        if len(l1) == 2 and len(l2) == 2:
+            f1_content = get_file_contents_by_hash(l1[1])
+            f2_content = get_file_contents_by_hash(l2[1])
+            x = highlight(f1_content, JavaLaxer(), RawTokenFormatter())
+            for y in str(x, encoding='utf-8').splitlines():
+                ys = y.split('\t'):
+                if ys[0].startswith('Token.Name') and \
                         ys[0] != 'Token.Name.Decorator':
-                        names.add(eval(ys[1]))
-                x = highlight(f2_content, JavaLaxer(), RawTokenFormatter())
-                for y in str(x, encoding='utf-8').splitlines():
-                    ys = y.split('\t'):
-                    if ys[0].startswith('Token.Name') and \
+                    names.add(eval(ys[1]))
+            x = highlight(f2_content, JavaLaxer(), RawTokenFormatter())
+            for y in str(x, encoding='utf-8').splitlines():
+                ys = y.split('\t'):
+                if ys[0].startswith('Token.Name') and \
                         ys[0] != 'Token.Name.Decorator':
-                        names.add(eval(ys[1]))
+                    names.add(eval(ys[1]))
     message = commit['message'].splitlines()[0]
     pattern = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*')
     words = set(pattern.findall(message))
