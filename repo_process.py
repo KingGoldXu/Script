@@ -6,7 +6,7 @@ import subprocess
 import json
 import re
 from pygments import highlight
-from pygments.lexers import JavaLaxer
+from pygments.lexers import JavaLexer
 from pygments.formatters import RawTokenFormatter
 
 
@@ -63,8 +63,10 @@ def get_commits_in_repo(repo_dir='./'):
                 commit['files'] = files
             if commit:
                 count2 += 1
-                if is_message_contain_code(commit):
+                tokens = is_message_contain_code(commit)
+                if tokens:
                     count3 += 1
+                    commit['tokens'] = tokens
                     commits.append(commit)
             file1, file2 = '', ''
             file_pair = {}
@@ -96,11 +98,13 @@ def get_commits_in_repo(repo_dir='./'):
                 file1 = file1 + '\t' + indexs[0]
                 file2 = file2 + '\t' + indexs[1]
         line = child1.stdout.readline().decode('utf-8', 'ignore')
-    json.dump(commits, open("/mnt/data1/kingxu/commits.json", 'w'))
+    repo = repo_dir.split('/')[-1]
+    json.dump(commits, open("/mnt/data1/kingxu/{}.commits.json".format(repo),
+                            'w'))
     print("All no-merges commits: {}".format(count1))
     print("Commits with java file: {}".format(count2))
     print("Commits message contain code: {}".format(count3))
-    return commits
+    return count3/count2, count3/count1
 
 
 def write_files_in_directory(commits, base_path):
@@ -156,15 +160,15 @@ def is_message_contain_code(commit):
         if len(l1) == 2 and len(l2) == 2:
             f1_content = get_file_contents_by_hash(l1[1])
             f2_content = get_file_contents_by_hash(l2[1])
-            x = highlight(f1_content, JavaLaxer(), RawTokenFormatter())
+            x = highlight(f1_content, JavaLexer(), RawTokenFormatter())
             for y in str(x, encoding='utf-8').splitlines():
-                ys = y.split('\t'):
+                ys = y.split('\t')
                 if ys[0].startswith('Token.Name') and \
                         ys[0] != 'Token.Name.Decorator':
                     names.add(eval(ys[1]))
-            x = highlight(f2_content, JavaLaxer(), RawTokenFormatter())
+            x = highlight(f2_content, JavaLexer(), RawTokenFormatter())
             for y in str(x, encoding='utf-8').splitlines():
-                ys = y.split('\t'):
+                ys = y.split('\t')
                 if ys[0].startswith('Token.Name') and \
                         ys[0] != 'Token.Name.Decorator':
                     names.add(eval(ys[1]))
