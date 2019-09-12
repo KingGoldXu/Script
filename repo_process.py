@@ -19,8 +19,8 @@ def get_file_contents_by_hash(hash_code):
     Returns:
         str -- 包含整个文件的字符串
     """
-    command = 'git cat-file -p ' + hash_code
-    child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    child = subprocess.Popen(['git', 'cat-file', '-p', hash_code],
+                             stdout=subprocess.PIPE)
     ret = child.stdout.read().decode('utf-8', 'ignore')
     child.wait()
     return ret
@@ -38,7 +38,8 @@ def get_commits_in_repo(repo_dir='./'):
         list -- 由commit组成的list.
     """
     os.chdir(repo_dir)
-    child1 = subprocess.Popen(['git', 'log', '-p'], stdout=subprocess.PIPE)
+    child1 = subprocess.Popen(['git', 'log', '-p', '--no-merges'],
+                              stdout=subprocess.PIPE)
     header_start = False
     commits = []
     commit = {}
