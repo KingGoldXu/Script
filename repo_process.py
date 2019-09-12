@@ -66,7 +66,7 @@ def get_commits_in_repo(repo_dir='./'):
                 tokens = is_message_contain_code(commit)
                 if tokens:
                     count3 += 1
-                    commit['tokens'] = tokens
+                    commit['tokens'] = list(tokens)
                     commits.append(commit)
             file1, file2 = '', ''
             file_pair = {}
