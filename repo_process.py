@@ -49,10 +49,8 @@ def get_commits_in_repo(repo_dir='./'):
     file_pair = {}
     file1, file2 = '', ''
     line = child1.stdout.readline().decode('utf-8', 'ignore')
-    count1, count2, count3 = 0, 0, 0
     while line:
         if line.startswith('commit'):
-            count1 += 1
             # new commit, save the old one
             if file1 and file2:
                 file_pair['file1'] = file1
@@ -62,13 +60,9 @@ def get_commits_in_repo(repo_dir='./'):
                 commit['hash'] = hash_code
                 commit['message'] = message.strip('\r\n')
                 commit['files'] = files
-            if commit:
-                count2 += 1
-                tokens = is_message_contain_code(commit)
-                if tokens:
-                    count3 += 1
-                    commit['tokens'] = list(tokens)
-                    commits.append(commit)
+            # changed more than 10 files, filter out, run faster
+            if commit and len(files) <= 10:
+                commits.append(commit)
             file1, file2 = '', ''
             file_pair = {}
             message = ''
@@ -102,10 +96,7 @@ def get_commits_in_repo(repo_dir='./'):
     repo = repo_dir.split('/')[-1]
     json.dump(commits, open("/mnt/data1/kingxu/{}.commits.json".format(repo),
                             'w'))
-    print("All no-merges commits: {}".format(count1))
-    print("Commits with java file: {}".format(count2))
-    print("Commits message contain code: {}".format(count3))
-    return count3/count2, count3/count1
+    return commits
 
 
 def write_files_in_directory(commits, base_path):
