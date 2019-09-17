@@ -151,8 +151,8 @@ def extract_class_and_method(java_dir, base_path):
                 x = highlight(cont, JavaLexer(), RawTokenFormatter())
                 for y in str(x, encoding='utf-8').splitlines():
                     ys = y.split('\t')
-                    if ys[0].startswith('Token.Name.Class') or \
-                            ys[0] != 'Token.Name.Function':
+                    if ys[0] == 'Token.Name.Class' or \
+                            ys[0] == 'Token.Name.Function':
                         names.add(eval(ys[1]))
             names_dict[h] = list(names)
     repo = java_dir.strip('/').split('/')[-1]
