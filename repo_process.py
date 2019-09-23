@@ -230,3 +230,54 @@ def is_message_contain_code(commit):
     pattern = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*')
     words = set(pattern.findall(message))
     return words.intersection(names)
+
+
+def commit_with_class_method(base_path, repo):
+    cs_name = '{}.commits.json'.format(repo)
+    ns_name = '{}.names.json'.format(repo)
+    commits = json.load(open(os.path.join(base_path, cs_name)))
+    names = json.load(open(os.path.join(base_path, ns_name)))
+    pattern = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*')
+    new_c = []
+    for c in commits:
+        token = []
+        name = []
+        m_line = c['message'].splitlines()
+        for i in m_line:
+            if not i.strip(' \t\r\n'):
+                break
+            token += pattern.findall(i)
+        for file_pair in c['files']:
+            file1, file2 = file_pair['file1'], file_pair['file2']
+            l1, l2 = file1.split('\t'), file2.split('\t')
+            if len(l1) == 2 and len(l2) == 2:
+                if l1[1] in names:
+                    name += names[l1[1]]
+                if l2[1] in names:
+                    name += names[l2[1]]
+        if set(token).intersection(set(name)):
+            new_c.append(c)
+    return new_c, len(new_c) / len(commits)
+
+
+def parse_java_to_AST(tool_path, java_dir):
+    """ 使用提供的工具处理base_path文件夹中的所有java文件并生成AST保存
+
+    Argments:
+        tool_path {string} -- 指定工具文件
+        java_dir {string} -- 指定需要处理的文件夹
+    """
+
+    if not os.path.isdir(java_dir):
+        return None
+    files = os.listdir(java_dir)
+    for f in files:
+        h, i = os.path.splitext(f)
+        if i == '.java':
+            cmd = [tool_path, 'parse', os.path.join(java_dir, f)]
+            child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            ret = child.stdout.read().decode('utf-8', 'ignore')
+            child.wait()
+            with open(os.path.join(java_dir, '{}.ast'.format(h)),
+                      'w') as fo:
+                fo.write(ret)
