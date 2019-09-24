@@ -138,6 +138,9 @@ def extract_files(json_file, repo_base, base_path):
 
 
 def extract_class_and_method(java_dir, base_path):
+    """ 为每个java文件提取class,function,attribute,name.
+        以文件的hash为key,存为json文件
+    """
     if not os.path.isdir(java_dir):
         return None
     files = os.listdir(java_dir)
@@ -145,16 +148,27 @@ def extract_class_and_method(java_dir, base_path):
     for f in files:
         h, i = os.path.splitext(f)
         if i == '.java':
+            classnames = set()
+            methodnames = set()
+            attributenames = set()
             names = set()
             with open(os.path.join(java_dir, f)) as fl:
                 cont = fl.read()
                 x = highlight(cont, JavaLexer(), RawTokenFormatter())
                 for y in str(x, encoding='utf-8').splitlines():
                     ys = y.split('\t')
-                    if ys[0] == 'Token.Name.Class' or \
-                            ys[0] == 'Token.Name.Function':
+                    if ys[0] == 'Token.Name.Class':
+                        classnames.add(eval(ys[1]))
+                    elif ys[0] == 'Token.Name.Function':
+                        methodnames.add(eval(ys[1]))
+                    elif ys[0] == 'Token.Name.Attribute':
+                        attributenames.add(eval(ys[1]))
+                    elif ys[0] == 'Token.Name':
                         names.add(eval(ys[1]))
-            names_dict[h] = list(names)
+            names_dict[h] = {'NC': list(classnames),
+                             'NF': list(methodnames),
+                             'NA': list(attributenames),
+                             'N': list(names)}
     repo = java_dir.strip('/').split('/')[-1]
     jf = os.path.join(base_path, '{}.names.json'.format(repo))
     json.dump(names_dict, open(jf, 'w'))
@@ -214,18 +228,13 @@ def is_message_contain_code(commit):
         if len(l1) == 2 and len(l2) == 2:
             f1_content = get_file_contents_by_hash(l1[1])
             f2_content = get_file_contents_by_hash(l2[1])
-            x = highlight(f1_content, JavaLexer(), RawTokenFormatter())
-            for y in str(x, encoding='utf-8').splitlines():
-                ys = y.split('\t')
-                if ys[0].startswith('Token.Name') and \
-                        ys[0] != 'Token.Name.Decorator':
-                    names.add(eval(ys[1]))
-            x = highlight(f2_content, JavaLexer(), RawTokenFormatter())
-            for y in str(x, encoding='utf-8').splitlines():
-                ys = y.split('\t')
-                if ys[0].startswith('Token.Name') and \
-                        ys[0] != 'Token.Name.Decorator':
-                    names.add(eval(ys[1]))
+            for f_content in [f1_content, f2_content]:
+                x = highlight(f_content, JavaLexer(), RawTokenFormatter())
+                for y in str(x, encoding='utf-8').splitlines():
+                    ys = y.split('\t')
+                    if ys[0].startswith('Token.Name') and \
+                            ys[0] != 'Token.Name.Decorator':
+                        names.add(eval(ys[1]))
     message = commit['message'].splitlines()[0]
     pattern = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*')
     words = set(pattern.findall(message))
@@ -233,15 +242,16 @@ def is_message_contain_code(commit):
 
 
 def commit_with_class_method(base_path, repo):
+    """ 为每个commit提供可能和代码中的元素重合的候选
+    """
     cs_name = '{}.commits.json'.format(repo)
     ns_name = '{}.names.json'.format(repo)
     commits = json.load(open(os.path.join(base_path, cs_name)))
     names = json.load(open(os.path.join(base_path, ns_name)))
     pattern = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*')
-    new_c = []
     for c in commits:
+        cn, fn, an, n = [], [], [], []
         token = []
-        name = []
         m_line = c['message'].splitlines()
         for i in m_line:
             if not i.strip(' \t\r\n'):
@@ -251,13 +261,20 @@ def commit_with_class_method(base_path, repo):
             file1, file2 = file_pair['file1'], file_pair['file2']
             l1, l2 = file1.split('\t'), file2.split('\t')
             if len(l1) == 2 and len(l2) == 2:
-                if l1[1] in names:
-                    name += names[l1[1]]
-                if l2[1] in names:
-                    name += names[l2[1]]
-        if set(token).intersection(set(name)):
-            new_c.append(c)
-    return new_c, len(new_c) / len(commits)
+                for h in [l1[1], l2[1]]:
+                    if h in names:
+                        cn += names[h]['NC']
+                        fn += names[h]['NF']
+                        an += names[h]['NA']
+                        n += names[h]['N']
+        cn, fn, an, n = set(cn), set(fn), set(an), set(n)
+        token = set(token)
+        tcn = list(token.intersection(cn))
+        tfn = list(token.intersection(fn))
+        tan = list(token.intersection(an))
+        tn = list(token.intersection(n))
+        c['append'] = {'NC': tcn, 'NF': tfn, 'NA': tan, 'N': tn}
+    json.dump(commits, open(os.path.join(base_path, cs_name), 'w'))
 
 
 def parse_java_to_AST(tool_path, java_dir):
