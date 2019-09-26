@@ -43,7 +43,7 @@ def get_commits_in_repo(repo_dir='./'):
     if not os.path.exists(repo_dir):
         return None
     os.chdir(repo_dir)
-    child1 = subprocess.Popen(['git', 'log', '-p', '--no-merges'],
+    child1 = subprocess.Popen(['git', 'log', '-U0', '--no-merges'],
                               stdout=subprocess.PIPE)
     header_start = False
     commits = []
@@ -293,8 +293,83 @@ def parse_java_to_AST(tool_path, java_dir):
         if i == '.java':
             cmd = [tool_path, 'parse', os.path.join(java_dir, f)]
             child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            ret = child.stdout.read().decode('utf-8', 'ignore')
-            child.wait()
             with open(os.path.join(java_dir, '{}.ast'.format(h)),
                       'w') as fo:
-                fo.write(ret)
+                ret = child.stdout.readline().decode('utf-8', 'ignore')
+                while ret:
+                    fo.write(ret)
+                    ret = child.stdout.readline().decode('utf-8', 'ignore')
+            child.wait()
+
+
+def extract_methods_in_file(filename, ast_tool):
+    methods = []
+    method = {}
+    p_node = dict()
+    with open(filename, 'r') as f:
+        f_content = f.read()
+    cmd = [ast_tool, 'parse', filename]
+    child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+    def process_line(line):
+        o_len = len(line)
+        line = line.strip(' \r\n')
+        p_len = len(line)
+        return (o_len - p_len) // 4, line
+
+    def get_line_number(content, lc_list):
+        ln_list = []
+        for i in lc_list:
+            ln_list.append(content[:i].count('\n') + 1)
+        return ln_list
+
+    ret = child.stdout.readline().decode('utf-8', 'ignore')
+    while ret:
+        key, line = process_line(ret)
+        if line.startswith('EnumDeclaration '):
+            p_node[key] = 'enum'
+        elif line.startswith('TYPE_DECLARATION_KIND: '):
+            p_node[key - 1] = line.split(' ')[1]
+            p_node[key] = ''
+        elif line.startswith('AnonymousClassDeclaration '):
+            p_node[key] = ''
+        elif line.startswith('SimpleName: '):
+            p_node[key - 1] = p_node[key - 1] + ' ' + line.split(' ')[1]
+        elif line.startswith('MethodDeclaration '):
+            location = eval(line[18:])
+            method['Lc'] = location
+            method['Ln'] = get_line_number(f_content, location)
+            method['Pa'] = p_node[key - 1]
+            method['Ct'] = f_content[location[0]: location[1]]
+            methods.append(method)
+            method = {}
+            p_node[key] = ''
+        else:
+            p_node[key] = ''
+        ret = child.stdout.readline().decode('utf-8', 'ignore')
+    return methods
+
+
+def extract_methods_for_dir(ast_tool, java_dir, saved_path):
+    """ 提取一个文件夹中所有java文件的methods并存储
+    """
+    hs_mt = {}
+    if not os.path.isdir(java_dir):
+        return None
+    files = os.listdir(java_dir)
+    for f in files:
+        h, i = os.path.splitext(f)
+        if i == '.java':
+            fl = os.path.join(java_dir, f)
+            methods = extract_methods_in_file(fl, ast_tool)
+            hs_mt[h] = methods
+    repo = java_dir.strip('/').split('/')[-1]
+    jf = os.path.join(saved_path, '{}.methods.json'.format(repo))
+    json.dump(hs_mt, open(jf, 'w'))
+
+
+if __name__ == '__main__':
+    # extract_methods_in_file('/Users/kingxu/tmp/4/old.java',
+    # '/Users/kingxu/gumtree/dist/build/install/gumtree/bin/gumtree')
+    extract_methods_for_dir('/Users/kingxu/gumtree/dist/build/install/gumtree/bin/gumtree',
+    '/Users/kingxu/tmp/4/', '/Users/kingxu/tmp/')
