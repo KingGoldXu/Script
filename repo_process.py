@@ -331,29 +331,30 @@ def extract_methods_in_file(filename, ast_tool):
         elif line.startswith('TYPE_DECLARATION_KIND: '):
             p_node[key - 1] = line.split(' ')[1]
             p_node[key] = ''
-        elif line.startswith('AnonymousClassDeclaration '):
-            p_node[key] = ''
         elif line.startswith('SimpleName: '):
-            p_node[key - 1] = p_node[key - 1] + ' ' + line.split(' ')[1]
+            if p_node[key - 1] == 'Md':
+                method['Md'] = line.split(' ')[1]
+                methods.append(method)
+                method = {}
+            elif p_node[key - 1]:
+                p_node[key - 1] = p_node[key - 1] + ' ' + line.split(' ')[1]
         elif line.startswith('MethodDeclaration '):
             location = eval(line[18:])
             method['Lc'] = location
             method['Ln'] = get_line_number(f_content, location)
             method['Pa'] = p_node[key - 1]
-            method['Ct'] = f_content[location[0]: location[1]]
-            methods.append(method)
-            method = {}
-            p_node[key] = ''
+            p_node[key] = 'Md'
         else:
             p_node[key] = ''
         ret = child.stdout.readline().decode('utf-8', 'ignore')
+    # print(methods)
     return methods
 
 
 def extract_methods_for_dir(ast_tool, java_dir, saved_path):
     """ 提取一个文件夹中所有java文件的methods并存储
     """
-    hs_mt = {}
+    hs_md = {}
     if not os.path.isdir(java_dir):
         return None
     files = os.listdir(java_dir)
@@ -362,10 +363,10 @@ def extract_methods_for_dir(ast_tool, java_dir, saved_path):
         if i == '.java':
             fl = os.path.join(java_dir, f)
             methods = extract_methods_in_file(fl, ast_tool)
-            hs_mt[h] = methods
+            hs_md[h] = methods
     repo = java_dir.strip('/').split('/')[-1]
     jf = os.path.join(saved_path, '{}.methods.json'.format(repo))
-    json.dump(hs_mt, open(jf, 'w'))
+    json.dump(hs_md, open(jf, 'w'))
 
 
 if __name__ == '__main__':
