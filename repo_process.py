@@ -175,39 +175,6 @@ def extract_class_and_method(java_dir, base_path):
     return names_dict
 
 
-def is_message_contain_code(commit):
-    """ 给定一个commit,判断commit message中是否包括了代码片段的commit.
-        代码片段包括class name,method name,variable name等.
-        准备采用get_file_contents_by_hash提取变动的java文件的内容,
-        使用pygments从java文件中获取name.
-
-    Arguments:
-        commit {dict} -- commits中的元素
-
-    Returns:
-        bool -- True如果包含
-    """
-
-    names, words = set(), set()
-    for file_pair in commit['files']:
-        file1, file2 = file_pair['file1'], file_pair['file2']
-        l1, l2 = file1.split('\t'), file2.split('\t')
-        if len(l1) == 2 and len(l2) == 2:
-            f1_content = get_file_contents_by_hash(l1[1])
-            f2_content = get_file_contents_by_hash(l2[1])
-            for f_content in [f1_content, f2_content]:
-                x = highlight(f_content, JavaLexer(), RawTokenFormatter())
-                for y in str(x, encoding='utf-8').splitlines():
-                    ys = y.split('\t')
-                    if ys[0].startswith('Token.Name') and \
-                            ys[0] != 'Token.Name.Decorator':
-                        names.add(eval(ys[1]))
-    message = commit['message'].splitlines()[0]
-    pattern = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*')
-    words = set(pattern.findall(message))
-    return words.intersection(names)
-
-
 def commit_with_class_method(base_path, repo):
     """ 为每个commit提供可能和代码中的元素重合的候选
     """
