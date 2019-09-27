@@ -175,39 +175,6 @@ def extract_class_and_method(java_dir, base_path):
     return names_dict
 
 
-def write_files_in_directory(commits, base_path):
-    """ 将commits中的每组文件对提取到base_path指定的文件夹中,
-        给文件对赋一个index,并以index为文件名存储两个文件
-
-    Arguments:
-        commits {list} -- 由get_commits_in_repo函数返回的列表
-        base_path {string} -- 以string指定的文件路径
-    """
-    index = 1
-    for commit in commits:
-        for file_pair in commit['files']:
-            file1, file2 = file_pair['file1'], file_pair['file2']
-            l1, l2 = file1.split('\t'), file2.split('\t')
-            if len(l1) == 2 and len(l2) == 2:
-                f1_content = get_file_contents_by_hash(l1[1])
-                f2_content = get_file_contents_by_hash(l2[1])
-                if f1_content and f2_content:
-                    file_pair['index'] = index
-                    dir = os.path.join(base_path, str(index))
-                    if not os.path.exists(dir):
-                        os.mkdir(dir)
-                    file1_name = os.path.join(dir, 'old.java')
-                    file2_name = os.path.join(dir, 'new.java')
-                    with open(file1_name, 'w') as f1:
-                        f1.write(f1_content)
-                    with open(file2_name, 'w') as f2:
-                        f2.write(f2_content)
-                    index += 1
-    json_file = os.path.join(base_path, 'commits1.json')
-    with open(json_file, 'w') as f:
-        json.dump(commits, f)
-
-
 def is_message_contain_code(commit):
     """ 给定一个commit,判断commit message中是否包括了代码片段的commit.
         代码片段包括class name,method name,variable name等.
