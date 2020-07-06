@@ -1,12 +1,13 @@
 import nltk
 from nltk.tokenize import TweetTokenizer, RegexpTokenizer
 from nltk.tag import pos_tag
-from nltk.corpus import wordnet 
-from nltk.stem import WordNetLemmatizer 
+from nltk.corpus import wordnet, stopwords
+from nltk.stem import WordNetLemmatizer
 import os
 import json
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
+from gensim import corpora, models
 # from matplotlib import pyplot as plt
 
 
@@ -58,9 +59,10 @@ def get_wordnet_pos(tag):
         return None
 
 
-def text_cluster(texts):
+def text_cluster(texts, max_features=3000):
     tokenizer = TweetTokenizer(preserve_case=False)
-    tfidf_vectorizer = TfidfVectorizer(tokenizer=tokenizer.tokenize, max_features=3000)
+    tfidf_vectorizer = TfidfVectorizer(
+        tokenizer=tokenizer.tokenize, max_features=max_features)
     X = tfidf_vectorizer.fit_transform(texts)
     sse = []
     for n in range(10, 100, 5):
@@ -80,7 +82,22 @@ def text_cluster(texts):
     #         f.write(str(i) + '\t' + j + '\n')
 
 
+def LDA(texts, num_topics):
+    stop_words = set(stopwords.words('english'))
+    texts = [[w for w in l.strip().split() if w not in stop_words]
+             for l in texts]
+    dictionary = corpora.Dictionary(texts)
+    corpus = [dictionary.doc2bow(l) for l in texts]
+    tfidf = models.TfidfModel(corpus)
+    corpus_tfidf = tfidf[corpus]
+    lda = models.LdaModel(
+        corpus_tfidf, id2word=dictionary, num_topics=num_topics)
+    lda.print_topics()
+
+
 if __name__ == '__main__':
-    texts = get_text('/mnt/data1/kingxu/atomic_change')
+    # texts = get_text('/mnt/data1/kingxu/atomic_change')
     # print(len(texts))
-    text_cluster(texts)
+    # text_cluster(texts)
+    LDA(texts, 10)
+    LDA(texts, 20)
