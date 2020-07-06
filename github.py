@@ -3,6 +3,7 @@ import subprocess
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import chardet
 
 
 def rename_repo(dir):
@@ -199,11 +200,15 @@ def merge_atomic_change(dir):
     files = os.listdir(dir)
     json_files = [file for file in files if file.endswith(".json")]
     atomic_changes = []
+    content_set = set()
     for file in json_files:
         full_path = os.path.join(dir, file)
         changes = json.load(open(full_path))
-        content_set = set()
+        # content_set = set()
         for change in changes:
+            # filter out no-ascii message
+            if chardet.detect(str.encode(change['message']))['encoding'] != 'ascii':
+                continue
             # filter out small message
             if len(change['message'].split(' ')) < 4:
                 continue
