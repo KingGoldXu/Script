@@ -2,7 +2,7 @@ import nltk
 from nltk.tokenize import TweetTokenizer, RegexpTokenizer
 from nltk.tag import pos_tag
 from nltk.corpus import wordnet, stopwords
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer, PorterStemmer
 import os
 import json
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -59,7 +59,7 @@ def get_wordnet_pos(tag):
         return None
 
 
-def line_tokenizer(line, fine=True):
+def line_tokenize(line, fine=True):
     """ split line and format a new line
     """
     f_tokenizer = RegexpTokenizer(pattern='\w+|[^\s\w]')
@@ -78,7 +78,7 @@ def line_tokenizer(line, fine=True):
     return " ".join(new_tokens)
 
 
-def lines_tokenizer(lines, fine=True):
+def lines_tokenize(lines, fine=True):
     f_tokenizer = RegexpTokenizer(pattern='\w+|[^\s\w]')
     new_lines = []
     if not fine:
@@ -98,6 +98,20 @@ def lines_tokenizer(lines, fine=True):
             else:
                 [new_tokens.append(j.lower()) for j in s_tokenizer.tokenize(i)]
         new_lines.append(" ".join(new_tokens))
+    return new_lines
+
+
+def line_stem(line):
+    porter_stemmer = PorterStemmer()
+    return " ".join([porter_stemmer.stem(i) for i in line.strip().split()])
+
+
+def lines_stem(lines):
+    porter_stemmer = PorterStemmer()
+    new_lines = []
+    for line in lines:
+        new_lines.append(" ".join([porter_stemmer.stem(i)
+                                   for i in line.strip().split()]))
     return new_lines
 
 
@@ -141,5 +155,10 @@ if __name__ == '__main__':
     # texts = get_text('/mnt/data1/kingxu/atomic_change')
     # print(len(texts))
     # text_cluster(texts)
+    # 'message_in_atomic_changes_json.txt' is from partial dataset processed by text_preprocess
+    # 'origin_message_in_atomic_changes_json.txt' is from full dataset and no process
+    with open('origin_message_in_atomic_changes_json.txt') as f:
+        texts = f.readlines()
+    texts = lines_tokenize(texts)
+    texts = lines_stem(texts)
     LDA(texts, 10)
-    LDA(texts, 20)
