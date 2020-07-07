@@ -184,14 +184,16 @@ def random_gen_pic(json_file):
         new_dot_file = '/Users/kingxu/tmp/dot/{}_{}.dot'.format(i['id'], 'new')
         json_to_dot(old_pruned_ast, old_dot_file)
         json_to_dot(new_pruned_ast, new_dot_file)
-        old_pdf_file = '/Users/kingxu/tmp/pdf1/{}_{}.pdf'.format(i['id'], 'old')
-        new_pdf_file = '/Users/kingxu/tmp/pdf1/{}_{}.pdf'.format(i['id'], 'new')
+        old_pdf_file = '/Users/kingxu/tmp/pdf1/{}_{}.pdf'.format(
+            i['id'], 'old')
+        new_pdf_file = '/Users/kingxu/tmp/pdf1/{}_{}.pdf'.format(
+            i['id'], 'new')
         p = subprocess.Popen(['dot', '-Tpdf', old_dot_file, '-o', old_pdf_file],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         print(stderr)
         p = subprocess.Popen(['dot', '-Tpdf', new_dot_file, '-o', new_pdf_file],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         print(stderr)
 
@@ -213,7 +215,8 @@ def merge_atomic_change(dir):
             if len(change['message'].split(' ')) < 4:
                 continue
             # filter out duplicate change
-            content = change['message'] + change['old_code'] + change['new_code']
+            content = change['message'] + \
+                change['old_code'] + change['new_code']
             if content in content_set:
                 continue
             # TODO: filter out big ast

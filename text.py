@@ -59,6 +59,48 @@ def get_wordnet_pos(tag):
         return None
 
 
+def line_tokenizer(line, fine=True):
+    """ split line and format a new line
+    """
+    f_tokenizer = RegexpTokenizer(pattern='\w+|[^\s\w]')
+    if not fine:
+        return " ".join([i.lower() for i in f_tokenizer.tokenize(line)])
+    s_tokenizer = RegexpTokenizer(pattern='[A-Z][a-z]*|[a-z]+|\d+')
+    tokens = f_tokenizer.tokenize(line.replace("_", " "))
+    new_tokens = []
+    for i in tokens:
+        if len(i) == 1:
+            new_tokens.append(i.lower())
+        elif i.isalpha() and (i.islower() or i.isupper()):
+            new_tokens.append(i.lower())
+        else:
+            [new_tokens.append(j.lower()) for j in s_tokenizer.tokenize(i)]
+    return " ".join(new_tokens)
+
+
+def lines_tokenizer(lines, fine=True):
+    f_tokenizer = RegexpTokenizer(pattern='\w+|[^\s\w]')
+    new_lines = []
+    if not fine:
+        for line in lines:
+            new_lines.append(" ".join([i.lower()
+                                       for i in f_tokenizer.tokenize(line)]))
+        return new_lines
+    s_tokenizer = RegexpTokenizer(pattern='[A-Z][a-z]*|[a-z]+|\d+')
+    for line in lines:
+        tokens = f_tokenizer.tokenize(line.replace("_", " "))
+        new_tokens = []
+        for i in tokens:
+            if len(i) == 1:
+                new_tokens.append(i.lower())
+            elif i.isalpha() and (i.islower() or i.isupper()):
+                new_tokens.append(i.lower())
+            else:
+                [new_tokens.append(j.lower()) for j in s_tokenizer.tokenize(i)]
+        new_lines.append(" ".join(new_tokens))
+    return new_lines
+
+
 def text_cluster(texts, max_features=3000):
     tokenizer = TweetTokenizer(preserve_case=False)
     tfidf_vectorizer = TfidfVectorizer(
