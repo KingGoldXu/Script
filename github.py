@@ -129,6 +129,49 @@ class DotFile():
             f.write(self.dot_str)
 
 
+class SBTSequece():
+    def __init__(self):
+        self.sequence = list()
+
+    def append(self, token):
+        self.sequence.append(token)
+
+    def add_all(self, tokens):
+        self.sequence += tokens
+
+    def to_str(self):
+        return " ".join(self.sequence)
+
+
+def output_sbt(root, sbts):
+    parent, child = root
+    sbts.append('(' + parent)
+    if isinstance(child, str):
+        sbts.append(child)
+    elif isinstance(child, dict):
+        for c in child.items():
+            output_sbt(c, sbts)
+    elif isinstance(child, list):
+        for i in child:
+            if not isinstance(i, dict):
+                print("Unexpected structure in AST!")
+            else:
+                for ii in i.items():
+                    output_sbt(ii, sbts)
+    sbts.append(')' + parent)
+
+
+def json2sbt(json_str):
+    ast = json.loads(json_str)
+    root = list(ast.items())
+    if len(root) != 1:
+        print("Not a AST!")
+        return ''
+    sbts = SBTSequece()
+    output_sbt(root[0], sbts)
+    return sbts.to_str()
+
+
 def ast_state(json_file):
     atomic_changes = json.load(open(json_file, 'r'))
     state = []
