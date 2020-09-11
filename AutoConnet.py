@@ -81,7 +81,13 @@ def autoLoop():
             if not isOnline(getCurrentUserInfo()):
                 lmsg,omsg = loginBrasAndCheckOnline()
                 if onlineDeviceNum(omsg)==1:
-                    print('Other device is online!')
+                    print('One device online! Try to login...')
+                    msg=login(login_data)
+                    if isLoginSuccess(msg):
+                        print('Login success!!!')
+                        printUserInfo(msg)
+                    else:
+                        print('Login failed!!!')
                 if not isBrasLoginSuccess(lmsg):
                     print("Can't login bras.nju!")
                 if onlineDeviceNum(omsg)==0:
@@ -92,6 +98,8 @@ def autoLoop():
                         printUserInfo(msg)
                     else:
                         print('Login failed!!!')
+                if onlineDeviceNum(omsg)==2:
+                    print('Two device online! Stop auto login!')
         except URLError:
             print('URLError')
         time.sleep(20)
